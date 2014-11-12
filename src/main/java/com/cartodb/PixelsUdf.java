@@ -40,15 +40,29 @@ public class PixelsUdf extends GenericUDF {
     System.out.println(pixelY);
   }
 
+  public Point mercatorPoint(Point point, int tileSize) {
+    int t2 = tileSize / 2;
+    return new Point(t2 + point.x * tileSize, t2 - point.y * tileSize);
+  }
+
+  public Point mercator(double lon, double lat) {
+    double reprojectedLat = Math.min(Math.max(lat, -89.189), 89.189);
+    reprojectedLat = Math.PI * (reprojectedLat / 180.0);
+    reprojectedLat = 0.5 * Math.log(Math.tan(0.25 * Math.PI + 0.5 * reprojectedLat)) / Math.PI;
+
+    double reprojectedLon = lon / 360.0;
+
+    return new Point(reprojectedLon, reprojectedLat);
+  }
+
   @Override
   public ObjectInspector initialize(ObjectInspector[] arguments) throws UDFArgumentException {
     if (arguments.length != 3) {
       throw new UDFArgumentLengthException("pixels() takes three arguments: lat, lon, zoom");
     }
 
-    List<String> fieldNames = new ArrayList<String>();
-    List<ObjectInspector> fieldOIs = new ArrayList<ObjectInspector>();
-
+    List<String> fieldNames = new ArrayList<>();
+    List<ObjectInspector> fieldOIs = new ArrayList<>();
 
     if ((arguments[0].getCategory() != ObjectInspector.Category.PRIMITIVE) || !arguments[0].getTypeName()
                                                                                  .equals(serdeConstants.DOUBLE_TYPE_NAME)) {
@@ -86,28 +100,12 @@ public class PixelsUdf extends GenericUDF {
     }
 
     Point point = mercatorPoint(mercator(lon, lat), TILE_SIZE);
-    int res = 1 << zoom;
+    int res = (int) Math.pow(2, zoom);
     int pixelX = (int) Math.floor(point.x * res);
     int pixelY = (int) Math.floor(point.y * res);
     xWritable.set(pixelX);
     yWritable.set(pixelY);
     return result;
-  }
-
-  public Point mercatorPoint(Point point, int tileSize) {
-    int t2 = tileSize >> 1;
-
-    return new Point(t2 + point.x * tileSize, t2 - point.y * tileSize);
-  }
-
-  public Point mercator(double lon, double lat) {
-    double reprojectedLat = Math.min(Math.max(lat, -89.189), 89.189);
-    reprojectedLat = Math.PI * (reprojectedLat / 180.0);
-    reprojectedLat = 0.5 * Math.log(Math.tan(0.25 * Math.PI + 0.5 * reprojectedLat)) / Math.PI;
-
-    double reprojectedLon = lon / 360.0;
-
-    return new Point(reprojectedLon, reprojectedLat);
   }
 
   @Override
