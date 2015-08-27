@@ -28,12 +28,12 @@ public class PixelsUdf extends GenericUDF {
   private int zoom = -1;
 
   public static void main(String[] args) {
-    double lat = 33.5738716125;
-    double lon = 130.401321411;
+    double lat = 33.5738716125; // 102, 205, 410
+    double lon = 130.401321411; // 220, 441, 882
 
     PixelsUdf udf = new PixelsUdf();
     Point point = udf.mercatorPoint(udf.mercator(lon, lat), TILE_SIZE);
-    int res = 1 << 0;
+    int res = 1 << 2;
     int pixelX = (int) Math.floor(point.x * res);
     int pixelY = (int) Math.floor(point.y * res);
     System.out.println(pixelX);
